@@ -1,0 +1,18 @@
+#!/bin/bash
+
+flag=0
+error=`./cs183/tests/check_no_problems 2>&1`
+if [ $? != 0 ]
+then
+	echo "$error" >&2
+	flag=1
+fi
+
+error=`./cs183/tests/check_dup_uids 2>&1`
+
+if [ $? != 0 ]
+then
+	echo "$error" >&2
+	flag=1
+fi
+exit $flag

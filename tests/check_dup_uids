@@ -1,0 +1,16 @@
+#!/bin/bash
+
+legacy=`$PWD/cs183/tests/dup_uid.rb $PWD/cs183/tests/passwd_dupes 2>&1`
+error=`$PWD/cs183/passcheck.rb $PWD/cs183/tests/passwd_dupes 2>&1`
+
+if [ $? -eq  2 ] && [ "$error" == "$legacy" ]
+then
+	exit 0
+elif [ $? -ne 2 ] || [ "$error" != "$legacy" ]
+then
+	echo "Error: expected return value of 2, got 0"
+	echo "Error: expected standard error matching the following, but got nothing"	
+	echo "$legacy" >&2
+	exit 1
+fi
+

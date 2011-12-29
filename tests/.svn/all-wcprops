@@ -1,0 +1,35 @@
+K 25
+svn:wc:ra_dav:version-url
+V 31
+/kwongr/cs183/!svn/ver/40/tests
+END
+passwd
+K 25
+svn:wc:ra_dav:version-url
+V 37
+/kwongr/cs183/!svn/ver/3/tests/passwd
+END
+passwd_dupes
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/kwongr/cs183/!svn/ver/3/tests/passwd_dupes
+END
+check_dup_uids
+K 25
+svn:wc:ra_dav:version-url
+V 46
+/kwongr/cs183/!svn/ver/40/tests/check_dup_uids
+END
+dup_uid.rb
+K 25
+svn:wc:ra_dav:version-url
+V 41
+/kwongr/cs183/!svn/ver/8/tests/dup_uid.rb
+END
+check_no_problems
+K 25
+svn:wc:ra_dav:version-url
+V 48
+/kwongr/cs183/!svn/ver/9/tests/check_no_problems
+END

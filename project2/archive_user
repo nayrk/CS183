@@ -1,0 +1,62 @@
+#!/usr/bin/env ruby
+
+#Full path global variable
+$path = File.expand_path($0)
+
+#Remove filename from fullpath
+$path.gsub!(File.basename($0),"")
+
+#Define error with logging
+def usage(error,code)
+	$stderr.puts "Error: #{error}"
+
+	#Append to accounts.log
+	time = Time.now
+	File.open("#{$path}accounts.log","a") do |v|
+		v << "#{time} WARN archive_user #{error}\n"
+	end
+	exit code
+end
+
+#Validity checking
+usage("Usage: ./archive user -l <login>",1) if ARGV.length != 2
+usage("Incorrect option",1) if ARGV[0] != "-l"
+usage("Incorrect argument",1) if ARGV[1] =~ /\W+/ 
+
+login = ARGV[1]
+
+#Create backup
+time = Time.now
+timef = time.strftime("%Y%m%d%H%M%S")
+`cp #{$path}etc/passwd #{$path}etc/passwd.#{timef}`
+
+#Initiate in-place editing and checking for login name
+flag = 0
+homedir = ""
+$-i=''
+ARGV[1] = "#{$path}etc/passwd"
+ARGV.shift
+ARGF.each do |v|
+	if v =~ /(.+):x:\d+:\d+:[-\w\s,]*:([\w\d\/]+):.*/
+		if $1 != login
+			#Print it if the login is not here
+			print v
+		else
+			#Flag 
+			flag = 1
+			homedir = $2
+		end
+	end
+end
+
+#Print error since the login wasn't found
+usage("Login name not found in etc/passwd",1) if flag == 0
+
+#Move and append date in UNIX time
+`mv #{homedir} #{$path}archived_homedirs/#{login}.#{Time.now.to_i}`
+
+#Log to accounts.log
+time = Time.now
+File.open("#{$path}accounts.log","a") do |v|
+	v << "#{time} INFO archive_user archived user #{login}\n"
+end

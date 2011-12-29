@@ -1,0 +1,58 @@
+#!/usr/bin/env ruby
+
+#Full path global variable
+$path = File.expand_path($0)
+
+#Remove filename from fullpath
+$path.gsub!(File.basename($0),"")
+
+#Define error with logging
+def usage(error,code)
+	$stderr.puts "Error: #{error}"
+
+	#Append to accounts.log
+	time = Time.now
+	File.open("#{$path}accounts.log","a") do |v|
+		v << "#{time} WARN add_group #{error}\n"
+	end
+	exit code
+end
+
+#Error checking
+usage("Usage: ./add_group -n <name> -g <gid>", 1) if ARGV.length != 4
+usage("Incorrect option",1) if ARGV[0] != "-n"
+usage("Incorrect argument for name",1) if ARGV[1] =~ /\W+/
+usage("Incorrect option",1) if ARGV[2] != "-g"
+usage("Incorrect argument for gid",1) if ARGV[3] =~ /\D+/
+
+#Hash
+options = {}
+options[:name] = ARGV[1]
+options[:gid] = ARGV[3].to_i
+
+#Check for integer range
+usage("Group ID is not between 0 and 65535", 1) if options[:gid] <= 0 or options[:gid] >= 65535
+
+#Check for duplicate ID and Username
+File.open("#{$path}etc/group","r").each_line do |v|
+	if v =~ /(\w+):x:(\d+):[\w,]*/
+		usage("Duplicate GID and/or NAME",1) if $1 == options[:name] or $2.to_i == options[:gid]
+	end
+end
+
+#Create backup
+time = Time.now
+timef = time.strftime("%Y%m%d%H%M%S")
+`cp #{$path}etc/group #{$path}etc/group.#{timef}`
+
+#Append to file
+str = "#{options[:name]}:x:#{options[:gid]}:\n"
+File.open("#{$path}etc/group","a") do |v|
+	v << "#{str}"
+end
+
+#Log to accounts.log
+File.open("#{$path}accounts.log","a") do |v|
+	v << "#{time} INFO add_group added group #{str}"
+end
+

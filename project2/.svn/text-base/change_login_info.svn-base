@@ -1,0 +1,135 @@
+#!/usr/bin/env ruby
+
+#Full path global variable
+$path = File.expand_path($0)
+
+#Remove filename from fullpath
+$path.gsub!(File.basename($0),"")
+
+#Define error with logging
+def usage(error,code)
+	$stderr.puts "Error: #{error}"
+
+	#Append to accounts.log
+	time = Time.now
+	File.open("#{$path}accounts.log","a") do |v|
+		v << "#{time} WARN change_login_info #{error}\n"
+	end
+	exit code
+end
+
+usage("Usage:\n./change_login_info -l <login> -i <GECOS>
+./change_login_info -l <login> -s <shell>
+./change_login_info -l <login> -d <home directory>",2) if ARGV.length != 4
+
+#Validity check
+usage("Incorrect option", 1) if ARGV[0] != "-l"
+usage("Incorrect option", 1) if ARGV[2] != "-i" and ARGV[2] != "-s" and ARGV[2] != "-d"
+
+#Check if login and uid already exists
+login = ARGV[1]
+flag = 0
+File.open("#{$path}etc/passwd","r").each do |v|
+	if v =~ /(.+):x:(\d+):\d+:[-\w\s,]*:([\w\d\/]+)/
+		if $1 == ARGV[1]
+			flag = 1
+		end
+	end
+end
+
+usage("Login doesn't exist",1) if flag == 0
+
+case ARGV[2]
+	when "-i"
+		gecos = ARGV[3]
+
+		#Shift all values of ARGV away for ARGF to open file for in-place editing
+		while ARGV[0]
+			ARGV.shift
+		end
+
+		#Create backup
+		time = Time.now
+		timef = time.strftime("%Y%m%d%H%M%S")
+		`cp #{$path}etc/passwd #{$path}etc/passwd.#{timef}`
+
+		#Initiate in-place editing and checking for login name
+		$-i=''
+		ARGV[1] = "#{$path}etc/passwd"
+		ARGV.shift
+		ARGF.each do |v|
+			if v =~ /((.+):x:\d+:\d+:)[-\w\s,]*(:[\w\d\/]+:.*)/
+				if login == $2
+					v = "#{$1}#{gecos}#{$3}"
+				end
+				puts v
+			end
+		end
+	when "-d"
+		usage("Directory must be in home\/directory_name",1) if !(ARGV[3] =~ /^home\/.+/)
+
+		dir = ARGV[3]
+
+		#Shift all values of ARGV away for ARGF to open file for in-place editing
+		while ARGV[0]
+			ARGV.shift
+		end
+
+		#Create backup
+		time = Time.now
+		timef = time.strftime("%Y%m%d%H%M%S")
+		`cp #{$path}etc/passwd #{$path}etc/passwd.#{timef}`
+
+		#Initiate in-place editing and checking for login name
+		homedir = ""
+		$-i=''
+		ARGV[1] = "#{$path}etc/passwd"
+		ARGV.shift
+		ARGF.each do |v|
+			if v =~ /((.+):x:\d+:\d+:[-\w\s,]*:)([\w\d\/]+)(:.*)/
+				if login == $2
+					v = "#{$1}#{$path}#{dir}#{$4}"
+					homedir = $3
+				end
+				puts v
+			end
+		end
+
+		#Move to new directory
+		`mv #{homedir} #{$path}#{dir}`
+
+	when "-s"
+		shell = ARGV[3]
+		usage("Not a valid shell", 1) if ARGV[3] != "/bin/bash" and ARGV[3] != "/bin/tcsh" 
+
+		#Shift all values of ARGV away for ARGF to open file for in-place editing
+		while ARGV[0]
+			ARGV.shift
+		end
+
+		#Create backup
+		time = Time.now
+		timef = time.strftime("%Y%m%d%H%M%S")
+		`cp #{$path}etc/passwd #{$path}etc/passwd.#{timef}`
+
+		#Initiate in-place editing and checking for login name
+		$-i=''
+		ARGV[1] = "#{$path}etc/passwd"
+		ARGV.shift
+		ARGF.each do |v|
+			if v =~ /((.+):x:\d+:\d+:[-\w\s,]*:[\w\d\/]+:).*/
+				if login == $2
+					v = "#{$1}#{shell}"
+				end
+				puts v
+			end
+		end
+	else
+		usage("Not a valid option", 1)
+end
+
+#Log to accounts.log
+time = Time.now
+File.open("#{$path}accounts.log","a") do |v|
+	v << "#{time} INFO change_login_info changed login info of user #{login}\n"
+end

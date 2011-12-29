@@ -1,0 +1,88 @@
+#!/usr/bin/env ruby
+
+#Full path global variable
+$path = File.expand_path($0)
+
+#Remove filename from fullpath
+$path.gsub!(File.basename($0),"")
+
+#Define error with logging
+def usage(error,code)
+	$stderr.puts "Error: #{error}"
+
+	#Append to accounts.log
+	time = Time.now
+	File.open("#{$path}accounts.log","a") do |v|
+		v << "#{time} WARN remove_login_from_group #{error}\n"
+	end
+	exit code
+end
+
+usage("Usage: ./remove_login_from_group -l <login> -g <name>",1) if ARGV.length != 4
+
+#Check for validity
+usage("Incorrect option", 1) if ARGV[0] != "-l"
+usage("Incorrect option", 1) if ARGV[2] != "-g"
+
+#Check if group exists
+flag = 0
+gidOfGroup = ""
+groupName = ARGV[3]
+File.open("#{$path}etc/group","r").each_line do |v|
+	if v =~ /(\w+):x:(\d+):([\w,]*)/
+		if $1 == ARGV[3]
+			gidOfGroup = $2.to_i
+			if $3 =~ /#{ARGV[1]}/
+				flag = 1
+			end
+		end
+	end
+end
+
+usage("Group name and/or login name doesn't exist in specified group", 1) if flag == 0
+
+#Check if login exists
+gidOfUser = ""
+login = ARGV[1]
+File.open("#{$path}etc/passwd","r").each do |v|
+	if v =~ /(.+):x:\d+:(\d+):[-\w\s,]*:([\w\d\/]+):.*/
+		if ARGV[1] == $1
+			gidOfUser = $2.to_i
+		end
+	end
+end
+
+usage("Login name doesn't exist in etc/passwd",1) if gidOfUser == ""
+
+#Shift all values of ARGV away for ARGF to open file for in-place editing
+while ARGV[0]
+	ARGV.shift
+end
+
+#Create backup
+time = Time.now
+timef = time.strftime("%Y%m%d%H%M%S")
+`cp #{$path}etc/group #{$path}etc/group.#{timef}`
+
+#In-place edit
+$-i=''
+ARGV[1] = "#{$path}etc/group"
+ARGV.shift
+ARGF.each do |v|
+	if v =~ /((\w+):x:\d+:)([\w,]*)/
+		if $2 == groupName
+			#Split the names by commas and select everything that isn't the login name
+			#Rejoin it back with commas
+			print $1
+			nameList = $3.split(",").select do |name| name != login end.join(",")
+			v =  nameList
+		end
+		puts v
+	end
+end
+
+#Log to accounts.log
+time = Time.now
+File.open("#{$path}accounts.log","a") do |v|
+	v << "#{time} INFO remove_login_from_group removed user #{login} from a group\n"
+end

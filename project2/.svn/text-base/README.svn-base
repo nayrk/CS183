@@ -1,0 +1,29 @@
+/*	Author: Ryan Kwong
+*	SID: 860-88-9552
+*	Date: 12/6/2011
+*/
+
+Extra Credit: Yes
+
+The scripts are written in Ruby, but I have commented nearly every line. Most
+of the logical syntax resembles Bash.
+
+Quick Tests for all 3 (main) scripts:
+
+for i in {1..25}; do ./add_group -n $i -g $i; done
+for i in {1..5}; do ./create_user -l $i -u $i -g $i -i $i -d $i -s /bin/bash; done
+
+#Throws errors
+for i in {1..20}; do ./create_user -l $i -u $i -g $i -i $i -d $i -s /bin/tcsh; done
+
+#Throws errors
+for i in {1..2}; do ./create_user -l $i -u $i -g $i -i $i -d $i -s /dne; done
+
+for i in {1..10}; do ./archive_user -l $i; done
+
+cat etc/group
+cat etc/passwd
+cat accounts.log
+ls -l etc
+ls -l home
+ls -l archived_homedirs

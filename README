@@ -1,0 +1,11 @@
+Owner: Ryan Kwong
+UCR CS183 - Unix System Administration
+
+Contains two projects.
+
+1) passwd and group tests
+	- Written in Ruby
+
+2) Implementation of adding users, groups, and archiving with logs
+	- Written in Ruby and Bash
+
